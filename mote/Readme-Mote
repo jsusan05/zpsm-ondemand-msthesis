@@ -1,0 +1,30 @@
+/*******************/
+/*Code installation*/
+/*******************/
+*Install TinyOS 2.1.1 :: <Cite>http://tinyos.stanford.edu/tinyos-wiki/index.php/Installing_TinyOS_2.1.1</Cite>
+Follow instructions in <src-root>/mote/install_tinyos.txt
+*Find the device file path
+$ motelist
+* Change permissions
+$ sudo chmod 666 /dev/ttyUSB0
+//BaseStation for client
+* change pwd to <src-root>/mote/BaseStation_duty
+//BaseStation for AP
+* change pwd to <src-root>/mote/BaseStation
+* Building and flashing a mote application
+$ make telosb
+$ make telosb reinstall, 0
+
+/************************************/
+/*Code changes for BaseStation_duty */
+/************************************/
+The following changes were added to the original BaseStation code to implement the duty cycle in mote
+So that the radio is not ON always. it is ON for 20ms and OFF after that for 30ms. This happens periodically
+The time interval was chosen as the wakeup interval is 40ms
+
+Makefile
+++++Added to change the channel that mote listens to
+    PFLAGS += -DCC2420_DEF_CHANNEL=5
+
+BaseStationC.nc, BaseStationP.nc
++++++Added Timer0 and code to turn radio ON and OFF at specific times

@@ -1,0 +1,82 @@
+Install TinyOS 2.1.1 on Ubuntu 12.04 64bit:
+
+0. Install JDK6 (Skip if you have already install)
+#JDK6 download at
+http://www.oracle.com/technetwork/java/javase/downloads/jdk6u38-downloads-1877406.html
+
+#The name of the downloaded file has the following format: jdk-6u(*)-linux-x64.bin
+
+#Make sure that execute permissions are set
+chmod +x jdk-6u(*)-linux-x64.bin
+
+#Copy jdk-6u(*)-linux-x64.bin to the location where you would like the files to be installed (say, /etc/lib/jvm/).
+
+# Run the self-extracting binary
+./jdk-6u(*)-linux-x64.bin
+
+#Set JavaHome
+sudo gedit /etc/profile
+
+#Append following line:
+export JAVA_HOME=/etc/lib/jvm/jdk1.6.0_38
+export PATH=$PATH:$JAVA_HOME/bin
+
+#Re-login and check JDK
+java -version
+
+1. Update the package list:
+sudo gedit /etc/apt/sources.list
+
+#Add the following lines
+deb http://hinrg.cs.jhu.edu/tinyos hardy main
+
+sudo apt-get update
+
+2. Install TinyOS:
+sudo apt-get install aptitude
+sudo aptitude install tinyos-2.1.1
+
+3. Setup environment in bashrc
+gedit ~/.bashrc
+
+#Add the following lines
+export TOSROOT=/opt/tinyos-2.1.1
+export TOSDIR=$TOSROOT/tos
+export CLASSPATH=$TOSROOT/support/sdk/java/tinyos.jar:.:$CLASSPATH
+export MAKERULES=$TOSROOT/support/make/Makerules
+source /opt/tinyos-2.1.1/tinyos.sh
+
+#The following lines are just added to save typing long commands
+alias tosprint0='java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb'
+alias tosprint1='java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB1:telosb'
+alias tosprint2='java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB2:telosb'
+alias tosprint3='java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB3:telosb'
+alias tosprint4='java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB4:telosb'
+alias tosprint5='java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB5:telosb'
+export port0="-comm serial@/dev/ttyUSB0:telosb"
+export port1="-comm serial@/dev/ttyUSB1:telosb"
+export port2="-comm serial@/dev/ttyUSB2:telosb"
+export port3="-comm serial@/dev/ttyUSB3:telosb"
+export port4="-comm serial@/dev/ttyUSB4:telosb"
+export port5="-comm serial@/dev/ttyUSB5:telosb"
+
+4. Update java environment:
+sudo tos-install-jni
+
+5. Reopen terminal
+
+6. Set permission
+#Display the device name
+motelist
+sudo chmod 666 /dev/ttyUSB<x>
+
+7. Build and install images
+#To build image only
+make telosb
+#(If only one mote is attached to the laptop) To load image
+make telosb reinstall,0
+#NOTE: TOS_NODE_ID=0, i.e., node id is the number following "reinstall,"
+#NOTE: no space after or before ","!
+
+#To remove tinyos: sudo aptitude remove tinyos-2.1.1
+#If installed with apt-get, use: sudo apt-get autoremove tinyos-2.1.1
