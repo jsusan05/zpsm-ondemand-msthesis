@@ -1,0 +1,16 @@
+//Sender inserts a timestamp and receiver calculates the difference and check if within delay bound
+Usage:
+udp_sender <ip address> <port> <size of packet in KB-1KB by default> <no. of packets unlimited by default>
+udp_receiver <port> <delay_bound_in_ms>
+
+egs: 
+/***Sender****/
+//To send 100 packets of 1KB each
+udp_sender 192.168.1.1 6799 1 100
+//To send unlimited packets of 1KB each
+udp_sender 192.168.1.1 6799 1
+
+/***Receiver****/
+//To receive packet at port 6799 and ensure that delay bound is 150ms
+udp_receiver 6799 150
+

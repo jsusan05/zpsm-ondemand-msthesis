@@ -1,0 +1,147 @@
+//==========================================================================//
+//==========Instructions to setup the ZPSM infrastructure===================//
+//==========================================================================//
+
+This code is a product of a master's thesis. Recommended citation.
+Varghese, Jinu Susan. Implementing ZigBee assisted power management for delay bounded communication on mobile devices. Diss. Iowa State University, 2014. https://dr.lib.iastate.edu/handle/20.500.12876/28005
+
+/**********************************/
+/* A. Setup Build Desktop Machine */
+/**********************************/
+This machine is used to flash ubuntu for Pandaboard and to flash the motes
+* Install Ubuntu 12.04 64-bit on a machine
+* Follow instructions in <src-root>/mote/Readme-Mote to setup TinyOS 2.1.1
+
+/***********************/
+/* B. Setup Pandaboards*/
+/***********************/
+(1) Format the SDCard
+<cite>https://wiki.ubuntu.com/ARM/OmapDesktopInstall</cite>
+A SanDisk 8GB SD card was used to install ubuntu 12.04 for OMAP4 on Pandaboard ES Rev B2.
+* Format the SDcard
+In the build desktop machine, insert the SDcard into the reader and insert into USB. 
+Then open application "Startup Disk Creator" and identify the device name say "/dev/sdb1" and click Erase disk.
+Another way to identify the device name is using command "dmesg"
+$ cd ~/Downloads
+$ wget http://cdimage.ubuntu.com/releases/12.04/release/ubuntu-12.04-preinstalled-desktop-armhf+omap4.img.gz
+//Note that the device name is correct, in this eg. it is /dev/sdb but may change
+$ gunzip ubuntu-12.04-preinstalled-desktop-armhf+omap4.img.gz
+$ sudo dd bs=4M if=ubuntu-12.04-preinstalled-desktop-armhf+omap4.img of=/dev/sdb
+$ sudo sync 
+
+(2) Install OS
+Now insert the SDCard into the SDCard slot on the pandaboard. Power it ON. Make sure it is
+connected to a monitor for which a HDMI-DVI cable is required. And also a mouse and keyboard is 
+connected to it. It would be a great idea to get a USB-extender as the board has only 2 USB-ports.
+Once the board is powered on, follow the instructions on the screen to install Ubuntu on the card
+Once installation is complete, setup headers for kernel module compilation
+$ sudo apt-get install build-essential linux-headers-$(uname -r)
+
+/***********************/
+/* C. Setup Mote       */
+/***********************/
+* Follow instructions in <src-root>/mote/Readme-Mote to setup motes with the BaseStation application
+This acts as a serial forwarder that pushes packets from serial port of pandaboard to mote which in turn
+broadcasts through radio and also receives incoming packets from radio and forwards it back to the pandaboard
+through serial port
+* Separate motes with BaseStation must be provided for AP and client pandaboards 
+
+/***********************/
+/* D. Setup AP         */
+/***********************/
+Pandaboard installed with Ubuntu and a mote setup is required. There is only one AP.
+(1) Setup AP in infrastructure mode
+Follow instructions in <src-root>/scripts/AP-setup-readme
+The IP address of the AP is assigned as 192.168.1.1 and since the subnet mask is 255.255.255.0,
+the clients are assigned IP addresses 192.168.1.[2-254] by the dhcp server
+
+(2) Setup the mote
+Identify the mote device name using command "dmesg" after inserting it
+Change permissions
+$ sudo chmod 666 /dev/ttyUSB0
+
+(3) Setup ZPSM AP
+* Change directory to <src-root>/src and run make
+$ make
+Make sure that that zpsmapmod.ko and zpsm_app are created.
+
+* Change directory to <src-root>/test/udp_test and run make
+$ make
+Make sure that that udp_sender and udp_receiver are created
+
+/***********************/
+/* E. Setup Client     */
+/***********************/
+Pandaboard installed with Ubuntu and a mote setup is required for each client as several
+clients are supported
+(1) Setup the mote
+Identify the mote device name using command "dmesg" after inserting it
+Change permissions
+$ sudo chmod 666 /dev/ttyUSB0
+
+(2) Setup ZPSM AP
+* Change directory to <src-root>/src and run make
+$ make
+Make sure that that zpsmapmod.ko and zpsm_app are created.
+
+* Change directory to <src-root>/test/udp_test and run make
+$ make
+Make sure that that udp_sender and udp_receiver are created
+
+/***********************/
+/* F. Testing          */
+/***********************/
+(1) Run ZPSM-AP
+* Open another terminal. Change directory to <src-root>/src
+$ sudo insmod zpsmapmod.ko
+* Open another terminal. Change directory to <src-root>/src
+Run ./zpsm_ap <device_filename> <baud_rate>
+$./zpsm_ap /dev/ttyUSB0 115200
+* Open another terminal. Change directory to <src-root>/test/udp_test
+Run udp_sender <ip address> <port> <size of packet in KB-1KB by default> <no. of packets unlimited by default>
+$ ./udp_sender 192.168.1.1 6799 1 100
+
+(2) Run ZPSM-Client on each client
+* Open another terminal. Change directory to <src-root>/src
+$ sudo insmod zpsmclientmod.ko
+* Open another terminal. Change directory to <src-root>/src. Specify the delay requirement of client app as well.
+Run ./zpsm_client <device_filename> <baud_rate> <delay_bound>
+$./zpsm_ap /dev/ttyUSB0 115200 100
+* Open terminal say 'PM'. Turn the power management mode of wifi off
+$ sudo iwconfig wlan0 power off
+* Open another terminal. Change directory to <src-root>/test/udp_test
+Run udp_receiver <port> <delay_bound_in_ms>
+$ ./udp_receiver 6799 100
+  In this terminal, once the synchronization packet which is the first packet with seq_id=0 is received
+  quickly switch to terminal 'PM' and turn power management back to on
+  $ sudo iwconfig wlan0 power on
+
+/***********************/
+/* G. Observations     */
+/***********************/
+(1) Delay-meet ratio, average delay on client
+    This result is obtained from the data displayed in the ./udp_receiver terminal on the client
+(2) Energy consumed
+    Add the number of control packets send through wifi to turn radio ON by both client application(ACKs) and kernel module(LI-poll)
+    by reading both the kernel log and client log    
+    * #ACKs in /var/log/kern.log 
+      $ cat /var/log/kern.log|grep "ACK:"
+    * #ACKs in <src-root>/src/client_log by noting the value of "ACK_counter"
+
+/***********************/
+/* H. Logging          */
+/***********************/
+Use ZPSM_LOG(...) inorder to log in kernel module and client module
+* Kernel logs are found in var/log/kern.log
+To clear it 
+$ sudo su
+# > var/log/kern.log
+* Client logs are found in <src-root>/src/client_log
+
+/***********************/
+/* H. Open Issues      */
+/***********************/
+* It supports only 8 clients because the serial forwarder provided by TinyOS supports only transfer of 2 bytes between 
+  PC and mote. One byte is reserved for header and the other one byte for clients, hence one bit for each client.
+
+

@@ -1,0 +1,23 @@
+/****************/
+/*Setting up AP */
+/****************/
+This section explains how to install hostapd and dhcp server and configure them to setup
+an access point in infrastructure mode.
+
+*Install hostapd
+$sudo apt-get install hostapd
+
+*Install dhcp server that assigns IP address to connecting clients
+$sudo apt-get install dhcp3-server
+
+*Open one terminal. Do not close this terminal.
+*Set current directory to <src-root>/scripts
+$sudo chmod a+x hostap-setup.sh
+$./hostap-setup.sh
+
+*Open another terminal
+*Set current directory to <src-root>/scripts
+$sudo chmod a+x dhcpd-setup.sh
+$./dhcpd-setup.sh
+
+

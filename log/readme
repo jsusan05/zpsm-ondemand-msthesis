@@ -1,0 +1,2 @@
+After running the kernel module, run 
+./log_extractor to get the kernel log
